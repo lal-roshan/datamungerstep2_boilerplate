@@ -1,11 +1,29 @@
-﻿namespace DbEngine
+﻿#region Namespace
+using DbEngine.Helper;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DbEngine
 {
+    #region Class
     public class QueryParser
     {
         private QueryParameter queryParameter;
         public QueryParser()
         {
             queryParameter = new QueryParameter();
+        }
+
+        private void SetQueryParameters(string queryString)
+        {
+            queryParameter.QueryString = queryString;
+            queryParameter.FileName = QueryHelper.GetFileNameFromQuery(queryParameter.QueryString);
+            queryParameter.Fields = GetFields(queryParameter.QueryString);
+            queryParameter.Restrictions = GetRestrictions();
+            queryParameter.LogicalOperators = GetLogicalOperators();
+            queryParameter.AggregateFunctions = GetAggregateFunctions(queryParameter.QueryString);
+            queryParameter.GroupByFields = GetGroupByFields(queryParameter.QueryString);
+            queryParameter.OrderByFields = GetOrderByFields(queryParameter.QueryString);
         }
 
         /*
@@ -15,6 +33,11 @@
 
         public QueryParameter parseQuery(string queryString)
         {
+            if (queryParameter == null)
+            {
+                queryParameter = new QueryParameter();
+            }
+            SetQueryParameters(queryString);
             return queryParameter;
         }
 
@@ -28,7 +51,7 @@
 	 */
         private string[] GetFields(string queryString)
         {
-            return null;
+            return QueryHelper.GetSelectedFields(queryString)?.ToArray();
         }
 
         /*
@@ -49,6 +72,30 @@
 
         private FilterCondition[] GetRestrictions()
         {
+            if (queryParameter != null && !string.IsNullOrEmpty(queryParameter.QueryString.Trim()))
+            {
+                List<string> restrictionsList = QueryHelper.GetConditionInFilter(queryParameter.QueryString);
+
+                if (restrictionsList != null &&
+                   !string.Equals(restrictionsList.First(), Common.NoFilterString))
+                {
+                    List<FilterCondition> filters = new List<FilterCondition>();
+                    foreach (string restriction in restrictionsList)
+                    {
+                        List<string> parts = Common.SplitConditionWords(restriction);
+                        if (parts != null && parts.Count == 3)
+                        {
+                            filters.Add(new FilterCondition(propertyName: parts[0],
+                                        propertyValue: parts[2], condition: parts[1]));
+                        }
+                    }
+                    if (filters.Any())
+                    {
+                        return filters.ToArray();
+                    }
+                }
+
+            }
             return null;
         }
 
@@ -64,6 +111,10 @@
 
         private string[] GetLogicalOperators()
         {
+            if (queryParameter != null && !string.IsNullOrEmpty(queryParameter.QueryString.Trim()))
+            {
+                return QueryHelper.GetLogicalOperators(queryParameter.QueryString)?.ToArray();
+            }
             return null;
         }
 
@@ -82,6 +133,24 @@
              */
         private AggregateFunction[] GetAggregateFunctions(string queryString)
         {
+            List<string> aggregateStrings = QueryHelper.GetAggregateFunctions(queryString);
+            if (aggregateStrings != null &&
+                !string.Equals(aggregateStrings.First(), Common.NoAggregateFunctions))
+            {
+                List<AggregateFunction> aggregates = new List<AggregateFunction>();
+                foreach (string aggregate in aggregateStrings)
+                {
+                    List<string> parts = Common.SplitAggregateFields(aggregate);
+                    if (parts != null && parts.Count == 2)
+                    {
+                        aggregates.Add(new AggregateFunction(field: parts[0], function: parts[1]));
+                    }
+                }
+                if (aggregates.Any())
+                {
+                    return aggregates.ToArray();
+                }
+            }
             return null;
         }
 
@@ -94,7 +163,7 @@
 	 */
         private string[] GetOrderByFields(string queryString)
         {
-            return null;
+            return QueryHelper.GetOrderField(queryString)?.ToArray();
         }
 
         /*
@@ -106,7 +175,10 @@
 	 */
         private string[] GetGroupByFields(string queryString)
         {
-            return null;
+            return QueryHelper.GetGroupByField(queryString)?.ToArray(); ;
         }
     }
+    #endregion
 }
+
+#endregion

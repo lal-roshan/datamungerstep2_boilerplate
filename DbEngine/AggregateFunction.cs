@@ -7,9 +7,14 @@
  * */
     public class AggregateFunction
     {
+        public string field;
+        public string function;
+
         // Write logic for constructor
         public AggregateFunction(string field, string function)
         {
+            this.field = field;
+            this.function = function;
         }
     }
 }

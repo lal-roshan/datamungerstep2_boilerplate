@@ -8,9 +8,18 @@
  * */
     public class FilterCondition
     {
+        public string propertyName;
+
+        public string propertyValue;
+
+        public string condition;
+
         // Write logic for constructor
-        public FilterCondition(string propertyName,string propertyValue, string condition)
+        public FilterCondition(string propertyName, string propertyValue, string condition)
         {
+            this.propertyName = propertyName;
+            this.propertyValue = propertyValue;
+            this.condition = condition;
         }
 
     }
